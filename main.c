@@ -37,45 +37,45 @@ int nextPatientID = 1; // Keeps track of the next available ID
 void addPatient()
 {
     Patient *newPatient = malloc(sizeof(Patient));
-    newPatient -> id = nextPatientID++; // Assign the next available ID
+    newPatient->id = nextPatientID++; // Assign the next available ID
 
 
     // Get patient details from user
     printf("Enter Patient Name: ");
-    fgets(newPatient -> name, 50, stdin);
-    newPatient -> name[strcspn(newPatient -> name, "\n")] = 0;
+    fgets(newPatient->name, 50, stdin);
+    newPatient->name[strcspn(newPatient->name, "\n")] = 0;
 
     do
     {
         printf("Enter Age: ");
-        scanf("%d", &newPatient -> age);
+        scanf("%d", &newPatient->age);
         getchar(); // To clear the newline left by scanf
     }
-    while(newPatient -> age < 0); // Ensure valid age input
+    while(newPatient->age < 0); // Ensure valid age input
 
     // Get diagnosis
     printf("Enter Diagnosis: ");
-    fgets(newPatient -> diagnosis, 20, stdin);
-    newPatient -> diagnosis[strcspn(newPatient -> diagnosis, "\n")] = 0;
+    fgets(newPatient->diagnosis, 20, stdin);
+    newPatient->diagnosis[strcspn(newPatient->diagnosis, "\n")] = 0;
 
     do
     {
         printf("Enter Room Number: "); // todo make room number upper and lower limit (not 0)
-        scanf("%d", &newPatient -> roomNumber);
+        scanf("%d", &newPatient->roomNumber);
         getchar();
     }
-    while(newPatient -> roomNumber < 0); // Ensure valid room number
+    while(newPatient->roomNumber < 0); // Ensure valid room number
 
     // Get current date and set as admission date
     time_t t = time(NULL);
     struct tm *tm_info = localtime(&t);
-    newPatient -> admitDate = *tm_info;  // Set admission date to current date
+    newPatient->admitDate = *tm_info; // Set admission date to current date
 
     // Discharge date is not set here
-    memset(&newPatient->dischargeDate, 0, sizeof(struct tm));  // Make discharge date 0 upon admission
+    memset(&newPatient->dischargeDate, 0, sizeof(struct tm)); // Make discharge date 0 upon admission
 
 
-    newPatient -> next = NULL;
+    newPatient->next = NULL;
 
     // Add the new patient to the linked list
     if(!head)
@@ -85,12 +85,12 @@ void addPatient()
     else
     {
         Patient *temp = head;
-        while(temp -> next)
-            temp = temp -> next;
-        temp -> next = newPatient;
+        while(temp->next)
+            temp = temp->next;
+        temp->next = newPatient;
     }
 
-    printf("Patient admitted successfully! Assigned ID: %d\n", newPatient -> id);
+    printf("Patient admitted successfully! Assigned ID: %d\n", newPatient->id);
 }
 
 //* Displays all the patients in the system
@@ -107,9 +107,9 @@ void viewPatients()
     while(temp)
     {
         printf("%d\t%s\n",
-               temp -> id,
-               temp -> name);
-        temp = temp -> next;
+               temp->id,
+               temp->name);
+        temp = temp->next;
     }
 }
 
@@ -138,18 +138,18 @@ void searchPatient()
 
         while(temp)
         {
-            if(temp -> id == id)
+            if(temp->id == id)
             {
                 printf("ID\tName\tAge\tDiagnosis\tRoom\n");
                 printf("%d\t%s\t%d\t%s\t%d\n",
-                       temp -> id,
-                       temp -> name,
-                       temp -> age,
-                       temp -> diagnosis,
-                       temp -> roomNumber);
+                       temp->id,
+                       temp->name,
+                       temp->age,
+                       temp->diagnosis,
+                       temp->roomNumber);
                 return;
             }
-            temp = temp -> next;
+            temp = temp->next;
         }
     }
     else if(choice == 2)
@@ -160,26 +160,28 @@ void searchPatient()
 
         while(temp)
         {
-            if(strcmp(temp -> name, name) == 0)
+            if(strcmp(temp->name, name) == 0)
             {
                 printf("ID\tName\tAge\tDiagnosis\tRoom\n");
                 printf("%d\t%s\t%d\t%s\t%d\n",
-                       temp -> id,
-                       temp -> name,
-                       temp -> age,
-                       temp -> diagnosis,
-                       temp -> roomNumber);
+                       temp->id,
+                       temp->name,
+                       temp->age,
+                       temp->diagnosis,
+                       temp->roomNumber);
                 return;
             }
-            temp = temp -> next;
+            temp = temp->next;
         }
     }
     printf("Patient not found.\n");
 }
 
 //* Discharges a patient by ID
-void dischargePatient() {
-    if (!head) {
+void dischargePatient()
+{
+    if(!head) // prevent discharging when no patients exist
+    {
         printf("No patients admitted.\n");
         return;
     }
@@ -191,16 +193,19 @@ void dischargePatient() {
 
     Patient *temp = head, *prev = NULL;
 
-    while (temp) {
-        if (temp->id == id) {
-            // Get current date and time for discharge
+    while(temp)
+    {
+        if(temp->id == id)
+        {
+            // Set discharge date
             time_t t = time(NULL);
             struct tm *tm_info = localtime(&t);
             temp->dischargeDate = *tm_info;
 
-            // Write to discharged file
+            // Open the discharge file
             FILE *dischargeFile = fopen("discharged.dat", "ab");
-            if (!dischargeFile) {
+            if(!dischargeFile)
+            {
                 printf("Error opening discharge file!\n");
                 return;
             }
@@ -209,15 +214,19 @@ void dischargePatient() {
             Patient patientCopy = *temp;
             patientCopy.next = NULL;
 
-            if (fwrite(&patientCopy, sizeof(Patient), 1, dischargeFile) != 1) {
+            if(fwrite(&patientCopy, sizeof(Patient), 1, dischargeFile) != 1)
+            {
                 printf("Error writing to discharge file!\n");
             }
             fclose(dischargeFile);
 
             // Remove from active list
-            if (prev) {
+            if(prev)
+            {
                 prev->next = temp->next;
-            } else {
+            }
+            else
+            {
                 head = temp->next;
             }
 
@@ -299,21 +308,27 @@ void displaySchedule()
 // ===================
 
 //* Save patients to a binary file
-void savePatients(const char *filename) {
+void savePatients(const char *filename)
+{
+    //> ERROR Handling, if the file can't be opened then print that it couldn't be opened
     FILE *file = fopen(filename, "wb");
-    if (!file) {
+    if(!file)   If fopen fails it would return NULL so this checks if that failed and the file pointer doesn't exist
+    {
         printf("Failed to open file for writing.\n");
         return;
     }
 
     Patient *temp = head;
-    while (temp) {
+    while(temp)
+    {
         // Create a copy without the next pointer
         Patient patientCopy = *temp;
         patientCopy.next = NULL;
 
-        if (fwrite(&patientCopy, sizeof(Patient), 1, file) != 1) {
-            printf("Error writing patient data.\n");
+        //> ERROR Handling, checks if Patient struct was written to the binary file 'file'
+        if(fwrite(&patientCopy, sizeof(Patient), 1, file) != 1) // should return 1, asked to write 1 item
+        {
+            printf("Error writing patient data.\n"); // if the file were read only or we ran out of memory, prints
             break;
         }
         temp = temp->next;
@@ -323,16 +338,19 @@ void savePatients(const char *filename) {
     printf("Patients saved successfully.\n");
 }
 
-void loadPatients(const char *filename) {
+void loadPatients(const char *filename)
+{
     FILE *file = fopen(filename, "rb");
-    if (!file) {
+    if(!file)
+    {
         printf("No existing patient data found.\n");
         return;
     }
 
     // Clear existing list
     Patient *temp = head;
-    while (temp) {
+    while(temp)
+    {
         Patient *next = temp->next;
         free(temp);
         temp = next;
@@ -344,20 +362,25 @@ void loadPatients(const char *filename) {
     Patient patientBuffer;
     Patient *last = NULL;
 
-    while (fread(&patientBuffer, sizeof(Patient), 1, file) == 1) {
+    while(fread(&patientBuffer, sizeof(Patient), 1, file) == 1)
+    {
         Patient *newPatient = malloc(sizeof(Patient));
         *newPatient = patientBuffer;
         newPatient->next = NULL;
 
-        if (!head) {
+        if(!head)
+        {
             head = newPatient;
-        } else {
+        }
+        else
+        {
             last->next = newPatient;
         }
         last = newPatient;
 
         // Update next available ID
-        if (newPatient->id >= nextPatientID) {
+        if(newPatient->id >= nextPatientID)
+        {
             nextPatientID = newPatient->id + 1;
         }
     }
@@ -407,7 +430,7 @@ void generateAdmissionReport(int reportType)
     struct tm *currentDate = localtime(&now);
 
     Patient *temp = head;
-    while (temp)
+    while(temp)
     {
         struct tm admit = temp->admitDate;
 
@@ -419,31 +442,31 @@ void generateAdmissionReport(int reportType)
         // Convert everything into a rough day difference
         int daysAgo = yearDiff * 365 + monthDiff * 30 + dayDiff;
 
-        if (reportType == 1 && yearDiff == 0 && monthDiff == 0 && dayDiff == 0)
+        if(reportType == 1 && yearDiff == 0 && monthDiff == 0 && dayDiff == 0)
         {
-            count++;  // Admitted today
+            count++; // Admitted today
         }
-        else if (reportType == 2 && daysAgo >= 0 && daysAgo <= 6)
+        else if(reportType == 2 && daysAgo >= 0 && daysAgo <= 6)
         {
-            count++;  // Within last 7 days
+            count++; // Within last 7 days
         }
-        else if (reportType == 3 && daysAgo >= 0 && daysAgo <= 29)
+        else if(reportType == 3 && daysAgo >= 0 && daysAgo <= 29)
         {
-            count++;  // Within last 30 days
+            count++; // Within last 30 days
         }
 
         temp = temp->next;
     }
 
-    if (reportType == 1)
+    if(reportType == 1)
     {
         printf("%d patients admitted today:\n", count);
     }
-    else if (reportType == 2)
+    else if(reportType == 2)
     {
         printf("%d patients admitted in the last week:\n", count);
     }
-    else if (reportType == 3)
+    else if(reportType == 3)
     {
         printf("%d patients admitted in the last month:\n", count);
     }
@@ -452,8 +475,8 @@ void generateAdmissionReport(int reportType)
 void generateDischargeReport(struct tm dischargeDate)
 {
     FILE *file = fopen("discharged.dat", "rb");
-    if (!file)
-        {
+    if(!file)
+    {
         printf("No discharged patients found.\n");
         return;
     }
@@ -467,12 +490,12 @@ void generateDischargeReport(struct tm dischargeDate)
     int count = 0;
 
     printf("ID\tName\n");
-    while (fread(&patient, sizeof(Patient), 1, file) == 1)
+    while(fread(&patient, sizeof(Patient), 1, file) == 1)
     {
         // Compare discharge dates
-        if (patient.dischargeDate.tm_mday == dischargeDate.tm_mday &&
-            patient.dischargeDate.tm_mon == dischargeDate.tm_mon &&
-            patient.dischargeDate.tm_year == dischargeDate.tm_year)
+        if(patient.dischargeDate.tm_mday == dischargeDate.tm_mday &&
+           patient.dischargeDate.tm_mon == dischargeDate.tm_mon &&
+           patient.dischargeDate.tm_year == dischargeDate.tm_year)
         {
             printf("%d\t%s\n",
                    patient.id,
@@ -481,7 +504,7 @@ void generateDischargeReport(struct tm dischargeDate)
         }
     }
 
-    if (count == 0)
+    if(count == 0)
     {
         printf("No patients discharged on this date.\n");
     }
@@ -521,12 +544,12 @@ void reportMenu()
             case 3: generateAdmissionReport(3);
                 break;
             case 4:
-                {
+            {
                 struct tm dischargeDate;
                 printf("Enter discharge date (day month year): ");
                 scanf("%d %d %d", &dischargeDate.tm_mday, &dischargeDate.tm_mon, &dischargeDate.tm_year);
                 dischargeDate.tm_mon--;        // Adjust for tm struct (0-11)
-                dischargeDate.tm_year -= 1900;  // Adjust for tm struct
+                dischargeDate.tm_year -= 1900; // Adjust for tm struct
                 generateDischargeReport(dischargeDate);
                 break;
             }
