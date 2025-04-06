@@ -37,6 +37,11 @@ int nextPatientID = 1; // Keeps track of the next available ID
 void addPatient()
 {
     Patient *newPatient = malloc(sizeof(Patient));
+    if(!newPatient)
+    {
+        printf("Memory allocation failed.\n");
+        return;
+    }
     newPatient->id = nextPatientID++; // Assign the next available ID
 
 
@@ -312,7 +317,7 @@ void savePatients(const char *filename)
 {
     //> ERROR Handling, if the file can't be opened then print that it couldn't be opened
     FILE *file = fopen(filename, "wb");
-    if(!file)   If fopen fails it would return NULL so this checks if that failed and the file pointer doesn't exist
+    if(!file) //If fopen fails it would return NULL so this checks if that failed and the file pointer doesn't exist
     {
         printf("Failed to open file for writing.\n");
         return;
@@ -365,6 +370,12 @@ void loadPatients(const char *filename)
     while(fread(&patientBuffer, sizeof(Patient), 1, file) == 1)
     {
         Patient *newPatient = malloc(sizeof(Patient));
+        if(!newPatient)
+        {
+            printf("Memory allocation failed.\n");
+            break;
+        }
+
         *newPatient = patientBuffer;
         newPatient->next = NULL;
 
