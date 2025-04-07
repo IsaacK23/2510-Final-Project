@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,6 +14,7 @@ char doctorSchedule[DAYS][SHIFTS][50]; // Doctor names per shift
 // ===================
 // PATIENT STRUCT
 // ===================
+//> Patient Struct for the LinkedList
 typedef struct Patient
 {
     int id;
@@ -36,6 +38,7 @@ int nextPatientID = 1; // Keeps track of the next available ID
 //* Adds a new patient to the system
 void addPatient()
 {
+    //> Dynamic memory allocation, if malloc fails we print an error and return;
     Patient *newPatient = malloc(sizeof(Patient));
     if(!newPatient)
     {
@@ -55,8 +58,14 @@ void addPatient()
         printf("Enter Age: ");
         scanf("%d", &newPatient->age);
         getchar(); // To clear the newline left by scanf
+
+
+        if (newPatient->age < 0 || !isdigit(newPatient->age))
+        {
+            printf("Invalid age.\n");
+        }
     }
-    while(newPatient->age < 0); // Ensure valid age input
+    while(newPatient->age < 0 || !isdigit(newPatient->age)); // Ensure valid age input
 
     // Get diagnosis
     printf("Enter Diagnosis: ");
@@ -65,7 +74,7 @@ void addPatient()
 
     do
     {
-        printf("Enter Room Number: "); // todo make room number upper and lower limit (not 0)
+        printf("Enter Room Number: ");
         scanf("%d", &newPatient->roomNumber);
         getchar();
     }
@@ -207,7 +216,7 @@ void dischargePatient()
             struct tm *tm_info = localtime(&t);
             temp->dischargeDate = *tm_info;
 
-            // Open the discharge file
+            //> Appends discharged patients into binary file
             FILE *dischargeFile = fopen("discharged.dat", "ab");
             if(!dischargeFile)
             {
@@ -312,7 +321,7 @@ void displaySchedule()
 // FILE HANDLING FUNCTIONS
 // ===================
 
-//* Save patients to a binary file
+//> File Persistence, Save patients to a binary file
 void savePatients(const char *filename)
 {
     //> ERROR Handling, if the file can't be opened then print that it couldn't be opened
@@ -342,7 +351,7 @@ void savePatients(const char *filename)
     fclose(file);
     printf("Patients saved successfully.\n");
 }
-
+//> File Persistence, Load Patients file to binary file
 void loadPatients(const char *filename)
 {
     FILE *file = fopen(filename, "rb");
@@ -400,7 +409,7 @@ void loadPatients(const char *filename)
     printf("Patients loaded successfully.\n");
 }
 
-
+//> File Persistence, Save doctor file to binary file
 void saveDoctorSchedule(const char *filename)
 {
     FILE *file = fopen(filename, "wb");
@@ -415,6 +424,7 @@ void saveDoctorSchedule(const char *filename)
     printf("Doctor schedule saved successfully.\n");
 }
 
+//> File Persistence, Load doctor file to binary file
 void loadDoctorSchedule(const char *filename)
 {
     FILE *file = fopen(filename, "rb");
@@ -432,7 +442,7 @@ void loadDoctorSchedule(const char *filename)
 // ===================
 // REPORTS
 // ===================
-
+//* Generates Admission reports to the console
 void generateAdmissionReport(int reportType)
 {
     int count = 0;
@@ -483,6 +493,7 @@ void generateAdmissionReport(int reportType)
     }
 }
 
+//* gereates Discharge reports to console
 void generateDischargeReport(struct tm dischargeDate)
 {
     FILE *file = fopen("discharged.dat", "rb");
@@ -523,6 +534,70 @@ void generateDischargeReport(struct tm dischargeDate)
     fclose(file);
 }
 
+//* generates doctor schedule reports to console
+void generateDoctorUtilizationReport()
+{
+    typedef struct
+    {
+        char name[50];
+        int shiftCount;
+    } DoctorRecord;
+
+    DoctorRecord doctors[DAYS * SHIFTS];
+    int doctorCount = 0;
+    int empty = 1; // Flag to check if any doctors are assigned
+
+    for(int i = 0; i < DAYS; i++)
+    {
+        for(int j = 0; j < SHIFTS; j++)
+        {
+            if(strlen(doctorSchedule[i][j]) > 0)
+            {
+                empty = 0; // At least one doctor is assigned
+                int found = 0;
+
+                // Check for existing doctor
+                for(int k = 0; k < doctorCount; k++)
+                {
+                    if(strcmp(doctors[k].name, doctorSchedule[i][j]) == 0)
+                    {
+                        doctors[k].shiftCount++;
+                        found = 1;
+                        break;
+                    }
+                }
+
+                // Add new doctor if not found
+                if(!found && doctorCount < DAYS * SHIFTS)
+                {
+                    strncpy(doctors[doctorCount].name, doctorSchedule[i][j], 49);
+                    doctors[doctorCount].name[49] = '\0'; // Ensure null-termination
+                    doctors[doctorCount].shiftCount = 1;
+                    doctorCount++;
+                }
+            }
+        }
+    }
+
+    if(empty)
+    {
+        printf("No doctors have been assigned to any shifts.\n");
+        return;
+    }
+
+    printf("\nDoctor Utilization Report:\n");
+    printf("-------------------------\n");
+    printf("%-20s %-10s\n", "Doctor Name", "Shifts");
+    printf("-------------------- ----------\n");
+
+    for(int i = 0; i < doctorCount; i++)
+    {
+        printf("%-20s %-10d\n", doctors[i].name, doctors[i].shiftCount);
+    }
+
+    printf("\nTotal doctors: %d\n", doctorCount);
+}
+
 
 // ===================
 // MENU SYSTEMS
@@ -540,8 +615,7 @@ void reportMenu()
         printf("3. Generate Admission Report (Monthly)\n");
         printf("4. Generate Discharge Report\n");
         printf("5. Generate Doctor Utilization Report\n");
-        printf("6. Generate Room Usage Report\n");
-        printf("7. Back\n");
+        printf("6. Back\n");
         printf("Enter choice: ");
         scanf("%d", &choice);
         getchar(); // Clear buffer
@@ -564,15 +638,13 @@ void reportMenu()
                 generateDischargeReport(dischargeDate);
                 break;
             }
-            case 5: //TODO generateDoctorUtilizationReport();
+            case 5: generateDoctorUtilizationReport();
                 break;
-            case 6: //TODO generateRoomUsageReport();
-                break;
-            case 7: return;
+            case 6: return;
             default: printf("Invalid choice!\n");
         }
     }
-    while(choice != 7);
+    while(choice != 6);
 }
 
 //* Main menu for hospital management
